@@ -1,0 +1,72 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.33.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: ca455e5b9f193ba9dfe6d753eed11ec0260309362063516024c4a65790dd46c7
+
+name:           chigginspicks
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/githubuser/chigginspicks#readme>
+homepage:       https://github.com/githubuser/chigginspicks#readme
+bug-reports:    https://github.com/githubuser/chigginspicks/issues
+author:         rbas
+maintainer:     ryanbas21@gmail.com
+copyright:      2020 rbas
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/githubuser/chigginspicks
+
+library
+  exposed-modules:
+      Main
+  other-modules:
+      Paths_chigginspicks
+  hs-source-dirs:
+      src
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      aeson
+    , base >=4.7 && <5
+    , bytestring
+    , chigginspicks
+    , containers
+    , dotenv
+    , lens
+    , lens-aeson
+    , mtl
+    , scotty
+    , text
+    , wreq
+  default-language: Haskell2010
+
+test-suite chigginspicks-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_chigginspicks
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      aeson
+    , base >=4.7 && <5
+    , bytestring
+    , chigginspicks
+    , containers
+    , dotenv
+    , lens
+    , lens-aeson
+    , mtl
+    , scotty
+    , text
+    , wreq
+  default-language: Haskell2010
