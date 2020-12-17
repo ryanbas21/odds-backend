@@ -23,6 +23,8 @@ dependencies:
 - base >= 4.7 && < 5
 - scotty
 - aeson
+- vector
+- unordered-containers
 - lens
 - lens-aeson
 - mtl
@@ -34,13 +36,17 @@ dependencies:
 
 library:
   source-dirs: src
-  main:                Main.hs
-  ghc-options:
-  - -threaded
-  - -rtsopts
-  - -with-rtsopts=-N
-  dependencies:
-  - chigginspicks
+
+executables:
+  chigginspicks-exe:
+    main:                Main.hs
+    source-dirs:         src
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - chigginspicks
 
 tests:
   chigginspicks-test:
