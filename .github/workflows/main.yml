@@ -1,11 +1,9 @@
 name: PS CI
 
-on: push
+on: 
   push: 
     paths: 
       - "frontend/*"
-    paths-ignore:
-      - "backend/*"
 
 jobs:
   build:
@@ -26,9 +24,9 @@ jobs:
         with:
           key: ${{ runner.os }}-spago-${{ hashFiles('*.dhall') }}
           path: |
-            frontend/.spago
-            frontend/output
+            .spago
+            output
 
-      - run: cd frontend & spago build
+      - run: spago build
 
-      - run: cd frontend & spago test --no-install
+      - run: spago test --no-install
