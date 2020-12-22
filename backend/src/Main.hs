@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -7,19 +6,15 @@ module Main (main) where
 
 import Configuration.Dotenv (defaultConfig, loadFile)
 import Control.Lens ((^.), (^?))
-import Control.Monad (mzero)
 import Control.Monad.Trans (liftIO)
-import Data.Aeson (FromJSON, Result (..), ToJSON, Value (Array), fromJSON, object, parseJSON, toJSON, withObject, (.:), (.=))
+import Data.Aeson (FromJSON, Result (..), ToJSON, fromJSON, object, parseJSON, toJSON, withObject, (.:), (.=))
 import Data.Aeson.Lens (key)
-import Data.Aeson.Types (Object, Parser, parse)
 import qualified Data.HashMap.Strict as HM
-import qualified Data.Vector as V
+import qualified Data.Text as T
 import GHC.Generics (Generic)
 import qualified Network.Wreq as W
 import System.Environment (getEnv)
-import Web.Scotty (get, json, param, scotty)
-
-newtype OddsList = OddsList {oddsList :: [Odds]} deriving (Show)
+import Web.Scotty (Param, get, json, params, scotty)
 
 data Odds = Odds
   { _sportKey :: String,
@@ -38,17 +33,17 @@ instance FromJSON Odds where
       "Odds"
       ( \obj -> do
           _sportKey <- obj .: "sport_key"
-          _sportNice <- obj .: "sports_nice"
+          _sportNice <- obj .: "sport_nice"
           _teams <- obj .: "teams"
           _commenceTime <- obj .: "commence_time"
           _homeTeam <- obj .: "home_team"
           _sites <- obj .: "sites"
-          _sitesCount <- obj .: "site_count"
+          _sitesCount <- obj .: "sites_count"
           pure $ Odds {_sportKey, _sportNice, _teams, _commenceTime, _homeTeam, _sites, _sitesCount}
       )
 
 instance ToJSON Odds where
-  toJSON Odds {_sportKey, _sportNice, _teams, _commenceTime, _homeTeam, _sites, _sitesCount} =
+  toJSON Odds {_sportKey, _sportNice, _teams, _commenceTime, _homeTeam, _sitesCount, _sites} =
     object
       [ "sport_key" .= _sportKey,
         "sport_nice" .= _sportNice,
@@ -59,36 +54,40 @@ instance ToJSON Odds where
         "sites_count" .= _sitesCount
       ]
 
-data Market = H2H | H2H_LAY | Spreads | Totals deriving (Show)
+data Market = H2H [Double] | H2H_LAY [Double] | Spreads [Double] | Totals [Double] deriving (Show)
 
 instance ToJSON Market where
-  toJSON Spreads = object ["totals" .= Totals]
-  toJSON Totals = object ["spreads" .= Spreads]
-  toJSON H2H = object ["h2h" .= H2H]
-  toJSON H2H_LAY = object ["h2h_lay" .= H2H_LAY]
+  toJSON (Spreads a) = object ["totals" .= a]
+  toJSON (Totals a) = object ["spreads" .= a]
+  toJSON (H2H a) = object ["h2h" .= a]
+  toJSON (H2H_LAY a) = object ["h2h_lay" .= a]
 
 instance FromJSON Market where
   parseJSON =
     withObject
       "Market"
       ( \obj -> do
-          case HM.keys obj of
-            ["h2h"] -> pure H2H
-            ["h2h_lay"] -> pure H2H_LAY
-            ["spreads"] -> pure Spreads
-            ["totals"] -> pure Totals
+          arr <- case HM.keys obj of
+            ["h2h"] -> obj .: "h2h"
+            ["h2h_lay"] -> obj .: "h2h_lay"
+            ["spreads"] -> obj .: "spreads"
+            ["totals"] -> obj .: "totals"
+            _ -> pure []
+          pure $ case HM.keys obj of
+            ["h2h"] -> H2H arr
+            ["h2h_lay"] -> H2H_LAY arr
+            ["spreads"] -> Spreads arr
+            ["totals"] -> Totals arr
+            _ -> H2H arr
       )
 
 data BookData = BookData
   { _siteKey :: String,
     _siteNice :: String,
     _lastUpdate :: Integer,
-    _odds :: [Market]
+    _odds :: Market
   }
   deriving (Show)
-
-parseOdds :: (FromJSON a) => Object -> Parser [a]
-parseOdds = mapM parseJSON . HM.elems
 
 instance ToJSON BookData where
   toJSON BookData {_siteKey, _siteNice, _lastUpdate, _odds} =
@@ -107,7 +106,7 @@ instance FromJSON BookData where
           _siteKey <- obj .: "site_key"
           _siteNice <- obj .: "site_nice"
           _lastUpdate <- obj .: "last_update"
-          _odds <- obj .: "odds" >>= parseOdds
+          _odds <- obj .: "odds"
           pure $ BookData {_siteKey, _siteNice, _lastUpdate, _odds}
       )
 
@@ -162,10 +161,24 @@ oddsFormatToString _ = "decimal"
 
 marketToString :: Market -> String
 marketToString m = case m of
-  Spreads -> "spreads"
-  H2H -> "h2h"
-  H2H_LAY -> "h2h_lay"
-  Totals -> "totals"
+  Spreads _ -> "spreads"
+  H2H _ -> "h2h"
+  H2H_LAY _ -> "h2h"
+  Totals _ -> "totals"
+
+-- stringToMarket :: String -> Market
+-- stringToMarket "spreads" = Spreads []
+-- stringToMarket "h2h" = H2H []
+-- stringToMarket "h2h_lay" = H2H_LAY []
+-- stringToMarket "totals" = Totals []
+-- stringToMarket _ = H2H []
+
+stringToRegion :: T.Text -> Region
+stringToRegion "au" = AU
+stringToRegion "UK" = UK
+stringToRegion "US" = US
+stringToRegion "EU" = EU
+stringToRegion _ = US
 
 regionToKey :: Region -> String
 regionToKey a = case a of
@@ -181,6 +194,13 @@ sportToKey sport = case sport of
   MLB -> "baseball_mlb"
   MMA -> "mma_mixed_martial_arts"
 
+keyToSport :: T.Text -> Sport
+keyToSport "americanfootball_ncaaf" = CFB
+keyToSport "americanfootball_nfl" = NFL
+keyToSport "baseball_mlb" = MLB
+keyToSport "mma_mixed_martial_arts" = MMA
+keyToSport "" = MMA
+
 baseUrl :: String
 baseUrl = "https://api.the-odds-api.com"
 
@@ -195,8 +215,6 @@ oddsApi key s r m = "/v3/odds/?apiKey=" ++ key ++ "&sport=" ++ sport ++ "&region
 sportsApi :: String -> String
 sportsApi key = "/v3/sports/?apiKey=" ++ key
 
--- /v3/odds/?apiKey={apiKey}&sport={sport}&region={region}&mkt={mkt}
---
 createUrl :: String -> String
 createUrl route = baseUrl ++ route
 
@@ -233,12 +251,18 @@ getOddsData :: Sport -> Region -> Market -> IO [Odds]
 getOddsData sport region market = do
   apiKey <- loadEnv
   let url = createUrl $ oddsApi apiKey sport region market
+  print url
   resp <- W.get url
   let body = resp ^. W.responseBody
   let dat = body ^? key "data"
   print dat
-  let x = fmap fromJSON dat
+  let x = fromJSON <$> dat
+  print x
   (pure . oddsFromMaybe) x
+
+-- [("sport","nfl"),("mkt","us")]
+paramsToRequest :: [Param] -> (Sport, Region)
+paramsToRequest [(_, spt), (_, cntry)] = (keyToSport spt, stringToRegion cntry)
 
 main :: IO ()
 main = scotty 3000 $ do
@@ -246,9 +270,12 @@ main = scotty 3000 $ do
     a <- liftIO getSportsData
     json a
 
-  get "/getOdds/:sport" $ do
+  get "/getOdds/:mkt/:sport" $ do
     -- param sport needs to be key from getSportsData
-    -- x <- param "sport"
-    d <- liftIO $ getOddsData NFL US H2H
-    liftIO $ print d
+    p <- params
+    let (spt, rgn) = paramsToRequest p
+    d <- liftIO $ getOddsData spt rgn (H2H [])
     json d
+
+-- liftIO $ print d
+-- json d
