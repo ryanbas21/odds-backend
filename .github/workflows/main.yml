@@ -21,9 +21,9 @@ jobs:
         with:
           key: ${{ runner.os }}-spago-${{ hashFiles('**/frontend/*.dhall') }}
           path: |
-            .spago
-            output
+            frontend/.spago
+            frontend/output
 
-      - run: spago build
+      - run: cd frontend & spago build
 
-      - run: spago test --no-install
+      - run: cd frontend & spago test --no-install
