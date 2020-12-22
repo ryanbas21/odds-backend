@@ -2,9 +2,13 @@ name: Haskell CI
 
 on:
   push:
+    paths:
+      - "backend/*"
     branches: [ master ]
   pull_request:
-    branches: [ master ]
+     paths:
+       - "backend/*"
+     branches: [ master ]
 
 jobs:
   build:
@@ -24,7 +28,7 @@ jobs:
         cache-name: cache-cabal
       with:
         path: ~/.cabal
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/backend/**/*.cabal') }}-${{ hashFiles('**/backend/**/cabal.project') }}
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/cabal.project') }}
         restore-keys: |
           ${{ runner.os }}-build-${{ env.cache-name }}-
           ${{ runner.os }}-build-
