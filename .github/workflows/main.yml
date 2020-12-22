@@ -1,6 +1,11 @@
 name: PS CI
 
 on: push
+  push: 
+    paths: 
+      - "frontend/*"
+    paths-ignore:
+      - "backend/*"
 
 jobs:
   build:
@@ -19,7 +24,7 @@ jobs:
         # have changed. If you do not want to cache compiled output, remove
         # the `output` path.
         with:
-          key: ${{ runner.os }}-spago-${{ hashFiles('**/frontend/*.dhall') }}
+          key: ${{ runner.os }}-spago-${{ hashFiles('*.dhall') }}
           path: |
             frontend/.spago
             frontend/output
