@@ -2,12 +2,8 @@ name: Haskell CI
 
 on:
   push:
-    paths: 
-      - "backend/*"
     branches: [ master ]
   pull_request:
-    paths: 
-      - "backend/*"
     branches: [ master ]
 
 jobs:

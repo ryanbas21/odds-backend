@@ -24,7 +24,5 @@ jobs:
             .spago
             output
 
-      - run: spago build
-        working-directory: ./frontend
-      - run: spago test --no-install
+      - run: npm run build
         working-directory: ./frontend
