@@ -6,6 +6,7 @@ module Main (main) where
 
 import Configuration.Dotenv (defaultConfig, loadFile)
 import Control.Lens ((^.), (^?))
+import Control.Lens.Combinators ( Field1(_1) ) ( Field1(_1) ) ( Field1(_1) ) ( Field1(_1) ) ( Field1(_1) ) ( Field1(_1) ) ( Field1(_1) ) ( Field1(_1) ) (Field1 (_1))
 import Control.Monad.Trans (liftIO)
 import Data.Aeson (FromJSON, Result (..), ToJSON, fromJSON, object, parseJSON, toJSON, withObject, (.:), (.=))
 import Data.Aeson.Lens (key)
